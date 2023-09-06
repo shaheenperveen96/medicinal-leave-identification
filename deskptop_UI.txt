@@ -1,0 +1,92 @@
+from tkinter import filedialog
+import tkinter as tk
+from tkinter import *
+from PIL import ImageTk, Image
+import numpy as np
+import keras.utils as image
+from keras.models import load_model
+from tkinter import messagebox
+from tkinter import ttk
+
+model = load_model('my_mobilenet(smotetest)-31.h5')
+root = Tk()
+root.title("Leaf Identification System")
+root.geometry("500x500")
+root.resizable(width =True, height=False)
+style = ttk.Style()
+style.configure('Raised.TButton', relief=tk.RAISED, borderwidth=2)
+style.configure('Sunken.TButton', relief=tk.SUNKEN, borderwidth=1)
+def cancel():
+    root.destroy()
+def open_image():
+    global img_path
+    img_path = filedialog.askopenfilename(initialdir="/", title="Select Image File",
+                                          filetypes=(("Image Files", "*.jpg;*.jpeg;*.png"), ("All Files", "*.*")))
+    if not img_path:
+        messagebox.showerror("Error", "You have selected nothing !")
+    else:
+        img = Image.open(img_path)
+        img = img.resize((224, 224))
+        img = ImageTk.PhotoImage(img)
+        panel.configure(image=img)
+        panel.image = img
+
+
+
+
+def mydescription(class_label):
+    import csv
+
+    with open('description.csv', newline='', encoding='iso-8859-1') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',', quotechar='"')
+        for row in reader:
+            if row[0] == class_label:
+                return row[1]
+
+    return 'no data found'
+
+def classify_image():
+    img = image.load_img(img_path, target_size=(224, 224))
+    img = image.img_to_array(img)
+    img = np.expand_dims(img, axis=0)
+    img = img/255.0
+    prediction = model.predict(img)
+    classes = ['Alpinia Galanga (Rasna)','Amaranthus Viridis (Arive-Dantu)', 'Artocarpus Heterophyllus (Jackfruit)', 'Azadirachta Indica (Neem)',
+               'Basella Alba (Basale)', 'Brassica Juncea (Indian Mustard)', 'carica papaya', 'Carissa Carandas (Karanda)',
+               'Citrus Limon (Lemon)', 'Ficus Auriculata (Roxburgh fig)', 'Ficus Religiosa (Peepal Tree)', 'Hibiscus Rosa-sinensis',
+               'Jasminum (Jasmine)', 'Mangifera Indica (Mango)', 'Mentha (Mint)', 'Moringa Oleifera (Drumstick)',
+               'Muntingia Calabura (Jamaica Cherry-Gasagase)', 'Murraya Koenigii (Curry)', 'Nerium Oleander (Oleander)',
+               'Nyctanthes Arbor-tristis (Parijata)', 'Ocimum Tenuiflorum (Tulsi)', 'Piper Betle (Betel)',
+               'Plectranthus Amboinicus (Mexican Mint)', 'Pongamia Pinnata (Indian Beech)', 'Psidium Guajava (Guava)',
+               'Punica Granatum (Pomegranate)', 'Santalum Album (Sandalwood)', 'Syzygium Cumini (Jamun)',
+               'Syzygium Jambos (Rose Apple)', 'Tabernaemontana Divaricata (Crape Jasmine)',
+               'Trigonella Foenum-graecum (Fenugreek)']
+    # your actual classes
+    predictedclass=classes[np.argmax(prediction)]
+    result_label.configure(text="Leaf: " +predictedclass)
+    print("----->"+predictedclass)
+    result_label_description.configure(text="Description: " +mydescription(predictedclass) ) #<------
+
+
+
+open_button = ttk.Button(root, text="Select Image", command=open_image,width=20,style='Sunken.TButton')
+open_button.pack(pady=10)
+
+classify_button =ttk.Button(root, text="Detect Image", command=classify_image,width=20,style='Sunken.TButton')
+classify_button.pack(pady=10)
+
+cancel_button =ttk.Button(root, text="Cancel", command=cancel,width=20,style='Sunken.TButton')
+cancel_button.pack(pady=10)
+
+panel = Label(root)
+panel.pack(pady=10)
+
+result_label = Label(root, text="")
+result_label.pack(pady=10)
+
+result_label_description = Label(root, text="",wraplength=500,justify="center")
+result_label_description.pack(pady=10)
+
+
+
+root.mainloop()
